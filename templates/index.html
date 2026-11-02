@@ -3,18 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Baraka Al-Sanabel | Product Assistant</title>
+  <title>Baraka Al-Sanabel | AI Sales Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&family=Noto+Kufi+Arabic:wght@500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --brand-gold: #C68E17;
-      --brand-dark: #2C2A27;
-      --bg-color: #F9F8F6;
-      --card-bg: #FFFFFF;
-      --border-color: #E5E3DF;
-      --text-muted: #7A7670;
+      --bg-main: #09090b;
+      --bg-card: #121215;
+      --bg-bubble-user: #27272a;
+      --bg-bubble-bot: #18181b;
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --gold: #d4af37;
+      --gold-hover: #fbbf24;
+      --border: #27272a;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -22,142 +25,180 @@
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--brand-dark);
+      background-color: var(--bg-main);
+      color: var(--text-main);
       display: flex;
       justify-content: center;
       height: 100dvh;
       overflow: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.04), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(212, 175, 55, 0.04), transparent 25%);
     }
 
     .app {
       width: 100%;
-      max-width: 800px;
+      max-width: 900px;
       height: 100%;
       display: flex;
       flex-direction: column;
-      background: var(--card-bg);
-      box-shadow: 0 0 40px rgba(0,0,0,0.05);
+      background: rgba(18, 18, 21, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
     @media (min-width: 768px) {
-      .app { height: 95dvh; margin-top: 2.5dvh; border-radius: 16px; border: 1px solid var(--border-color); }
+      .app { 
+        height: 92dvh; 
+        margin-top: 4dvh; 
+        border-radius: 24px; 
+        border: 1px solid var(--border); 
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
     }
 
+    /* Header */
     .header {
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 20px;
-      border-bottom: 1px solid var(--border-color);
-      background: var(--card-bg);
-      z-index: 10;
+      justify-content: space-between;
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
     }
-
+    .header-left { display: flex; align-items: center; gap: 16px; }
     .avatar {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: var(--brand-gold);
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #18181b, #27272a);
+      border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       font-family: 'Noto Kufi Arabic', sans-serif;
-      font-size: 20px; font-weight: 600; color: #FFF;
-      box-shadow: 0 4px 12px rgba(198, 142, 23, 0.2);
+      font-size: 22px; font-weight: 600; color: var(--gold);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
-
-    .header-info h1 {
-      font-size: 1.15rem; font-weight: 600; color: var(--brand-dark); margin-bottom: 2px;
+    .header-title h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem; font-weight: 600; margin-bottom: 2px;
+      color: var(--text-main); letter-spacing: -0.02em;
     }
     .header-status {
       font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;
     }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    
+    .header-badge {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--gold); border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 6px 12px; border-radius: 99px; font-weight: 500;
+      background: rgba(212, 175, 55, 0.05);
+    }
+    @media (max-width: 768px) { .header-badge { display: none; } }
 
+    /* Chat Area */
     .messages { 
       flex: 1; 
       overflow-y: auto; 
       padding: 24px; 
-      background: var(--bg-color);
       scroll-behavior: smooth;
     }
     .messages-inner { 
-      max-width: 640px; 
+      max-width: 700px; 
       margin: 0 auto; 
       display: flex; 
       flex-direction: column; 
-      gap: 20px; 
+      gap: 24px; 
     }
 
-    .msg-row { display: flex; gap: 12px; }
+    .msg-row { display: flex; gap: 16px; align-items: flex-start; }
     .msg-row.user { justify-content: flex-end; }
 
     .bubble {
-      padding: 14px 18px; border-radius: 12px; font-size: 14.5px; line-height: 1.6;
+      padding: 16px 20px; border-radius: 16px; font-size: 15px; line-height: 1.6;
       max-width: 85%; white-space: pre-wrap; word-break: break-word;
     }
     .bubble.bot {
-      background: #FFF; border: 1px solid var(--border-color); color: var(--brand-dark);
-      border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      background: var(--bg-bubble-bot); border: 1px solid var(--border); color: var(--text-main);
+      border-top-left-radius: 4px;
     }
     .bubble.user {
-      background: var(--brand-gold); color: #FFF; border-bottom-right-radius: 4px;
-      box-shadow: 0 2px 8px rgba(198, 142, 23, 0.2);
+      background: var(--bg-bubble-user); color: #fff;
+      border-top-right-radius: 4px; border: 1px solid #3f3f46;
     }
-    .bubble strong { font-weight: 600; color: #1A1816; }
-    .bubble a { color: var(--brand-gold); text-decoration: underline; }
+    .bubble strong { font-weight: 600; color: var(--gold); }
+    .bubble a { color: var(--gold); text-decoration: underline; }
 
     .bot-avatar {
-      width: 32px; height: 32px; border-radius: 50%; background: var(--brand-gold);
+      width: 36px; height: 36px; border-radius: 10px; background: #27272a;
+      border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Noto Kufi Arabic', sans-serif; color: #FFF; font-size: 14px; flex-shrink: 0;
-      margin-top: 2px;
+      font-family: 'Noto Kufi Arabic', sans-serif; color: var(--gold); font-size: 16px; flex-shrink: 0;
     }
 
+    /* Permanent Suggestions */
+    .suggestions-wrapper {
+      padding: 0 24px 16px 24px;
+      max-width: 750px;
+      margin: 0 auto;
+      width: 100%;
+    }
     .suggestions {
-      padding: 12px 24px; background: var(--card-bg); border-top: 1px solid var(--border-color);
       display: flex; gap: 8px; overflow-x: auto; white-space: nowrap;
+      scrollbar-width: none; /* Firefox */
     }
-    .suggestions::-webkit-scrollbar { display: none; }
+    .suggestions::-webkit-scrollbar { display: none; } /* Chrome */
+    
     .chip {
-      padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border-color);
-      background: var(--bg-color); font-size: 13px; color: var(--brand-dark); cursor: pointer;
-      transition: all 0.2s; font-family: 'Inter', sans-serif;
+      padding: 10px 16px; border-radius: 99px; border: 1px solid var(--border);
+      background: rgba(39, 39, 42, 0.4); font-size: 13px; color: var(--text-muted); 
+      cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
     }
-    .chip:hover { background: var(--brand-gold); color: #FFF; border-color: var(--brand-gold); }
+    .chip:hover { 
+      background: var(--bg-bubble-user); color: var(--gold); border-color: rgba(212, 175, 55, 0.4); 
+    }
 
+    /* Input Area */
     .composer {
-      padding: 16px 24px; background: var(--card-bg);
+      padding: 0 24px 24px 24px; 
+      max-width: 750px;
+      margin: 0 auto;
+      width: 100%;
     }
     .composer-inner {
-      display: flex; gap: 12px; align-items: center; max-width: 640px; margin: 0 auto;
+      display: flex; gap: 12px; align-items: center;
+      background: rgba(24, 24, 27, 0.8);
+      border: 1px solid var(--border); border-radius: 99px;
+      padding: 6px 6px 6px 20px;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .input-box {
-      flex: 1; display: flex; align-items: center;
-      border: 1px solid var(--border-color); border-radius: 12px;
-      background: var(--bg-color); padding: 4px 8px; transition: border-color 0.2s;
+    .composer-inner:focus-within { 
+      border-color: rgba(212, 175, 55, 0.5); 
+      box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
     }
-    .input-box:focus-within { border-color: var(--brand-gold); }
-    .input-box input {
-      flex: 1; border: none; background: transparent; padding: 12px; font-size: 15px;
-      outline: none; color: var(--brand-dark); font-family: 'Inter', sans-serif;
+    .composer-inner input {
+      flex: 1; border: none; background: transparent; padding: 12px 0; font-size: 15px;
+      outline: none; color: var(--text-main); font-family: 'Inter', sans-serif;
     }
+    .composer-inner input::placeholder { color: #52525b; }
+    
     .send-btn {
-      width: 44px; height: 44px; border-radius: 10px; border: none;
-      background: var(--brand-gold); color: #FFF; cursor: pointer;
+      width: 44px; height: 44px; border-radius: 50%; border: none;
+      background: var(--gold); color: #000; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.1s; flex-shrink: 0;
+      transition: all 0.2s; flex-shrink: 0;
     }
+    .send-btn:hover { background: var(--gold-hover); transform: scale(1.05); }
     .send-btn:active { transform: scale(0.95); }
-    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .send-btn svg { width: 18px; height: 18px; }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .send-btn svg { width: 20px; height: 20px; }
 
     .footer-info {
-      display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--text-muted);
+      display: flex; justify-content: center; gap: 16px; margin-top: 16px; font-size: 12px; color: #52525b;
     }
     .footer-info a { color: inherit; text-decoration: none; transition: color 0.2s; }
-    .footer-info a:hover { color: var(--brand-gold); }
+    .footer-info a:hover { color: var(--gold); }
 
     /* Typing Indicator */
-    .typing { display: flex; align-items: center; gap: 4px; padding: 14px 18px; }
-    .typing-dot { width: 6px; height: 6px; background: var(--brand-gold); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+    .typing { display: flex; align-items: center; gap: 4px; padding: 18px 20px; }
+    .typing-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
     .typing-dot:nth-child(1) { animation-delay: -0.32s; }
     .typing-dot:nth-child(2) { animation-delay: -0.16s; }
     @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
@@ -167,30 +208,33 @@
 
 <div class="app">
   <header class="header">
-    <div class="avatar">ب</div>
-    <div class="header-info">
-      <h1>Baraka Al-Sanabel</h1>
-      <div class="header-status">
-        <span class="status-dot"></span> Online · AI Product Assistant
+    <div class="header-left">
+      <div class="avatar">ب</div>
+      <div class="header-title">
+        <h1>Baraka Al-Sanabel</h1>
+        <div class="header-status">
+          <span class="status-dot"></span> Online · AI Sales Assistant
+        </div>
       </div>
     </div>
+    <div class="header-badge">B2B Portal</div>
   </header>
 
   <div class="messages" id="messages">
     <div class="messages-inner" id="messagesInner"></div>
   </div>
 
-  <div class="suggestions" id="suggestions">
-    <div class="suggestions-inner" id="suggestionsInner"></div>
+  <div class="suggestions-wrapper">
+    <div class="suggestions" id="suggestions">
+      <div class="suggestions-inner" id="suggestionsInner" style="display: flex; gap: 8px;"></div>
+    </div>
   </div>
 
   <form class="composer" id="composerForm">
     <div class="composer-inner">
-      <div class="input-box">
-        <input type="text" id="messageInput" placeholder="Ask about our pasta…" autocomplete="off" aria-label="Message Baraka Assistant" />
-      </div>
+      <input type="text" id="messageInput" placeholder="Ask about our products, exports, or bulk orders..." autocomplete="off" aria-label="Message Baraka Assistant" />
       <button type="submit" class="send-btn" id="sendBtn" aria-label="Send message" disabled>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
       </button>
     </div>
     <div class="footer-info">
@@ -206,13 +250,23 @@
 <script>
   const SESSION_ID = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   
-  // These are the permanent suggestions
-  const SUGGESTIONS = [
+  const ALL_SUGGESTIONS = [
     "What pasta shapes do you make?",
     "Do you have whole wheat?",
     "Which countries do you export to?",
     "I want to place a bulk order",
+    "Are you ISO certified?",
+    "Do you use Swiss wheat?",
+    "What is your MOQ?",
+    "Tell me about the Rovito brand",
+    "Where is your factory?",
+    "Do you make gluten-free pasta?"
   ];
+
+  function getRandomSuggestions() {
+    const shuffled = [...ALL_SUGGESTIONS].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  }
 
   const messagesInner = document.getElementById('messagesInner');
   const suggestionsInner = document.getElementById('suggestionsInner');
@@ -253,6 +307,7 @@
 
     messagesInner.appendChild(wrapper);
     scrollToBottom();
+    renderSuggestions();
   }
 
   function showTyping() {
@@ -284,7 +339,9 @@
 
   function renderSuggestions() {
     suggestionsInner.innerHTML = '';
-    SUGGESTIONS.forEach(s => {
+    const currentSuggestions = getRandomSuggestions();
+    
+    currentSuggestions.forEach(s => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'chip';
@@ -319,7 +376,7 @@
       addMessage('bot', "We couldn't reach the assistant. Please try again.");
     } finally {
       sending = false;
-      sendBtn.disabled = false; // Keep send button active if they type again
+      sendBtn.disabled = false; 
       input.disabled = false;
       input.focus();
     }
@@ -333,10 +390,9 @@
     if (e.key === 'Enter') { e.preventDefault(); send(); }
   });
 
-  // Initial welcome message for the UI
+  // Initial welcome message
   addMessage('bot', "Welcome to **Baraka Al-Sanabel** 🌾\nمرحباً بك في بركة السنابل\n\nI'm the Baraka product assistant. Ask me about our pasta shapes, whole wheat line, Swiss manufacturing, certifications, export markets, or start a bulk order inquiry.");
   
-  // Render the chips
   renderSuggestions();
   input.focus();
 </script>
