@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Baraka Al-Sanabel | Product Assistant</title>
+  <meta name="description" content="Ask Baraka Assistant about our pasta shapes, Swiss manufacturing, certifications, and bulk orders.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #d4a017;
+      --gold-soft: #f0d78c;
+      --gold-deep: #8a6a0f;
+      --olive: #6b7f3a;
+      --bg: #0d0b07;
+      --bg-deep: #080605;
+      --fg: #f8f4ea;
+      --fg-muted: #b0a890;
+      --card: #14110b;
+      --border: rgba(255,255,255,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,160,23,0.14), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 100%, rgba(107,127,58,0.08), transparent 60%),
+        radial-gradient(ellipse 50% 40% at 10% 90%, rgba(70,55,20,0.25), transparent 60%),
+        linear-gradient(180deg, #0d0b07, #080605);
+      background-attachment: fixed;
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      overflow: hidden;
+    }
+
+    .font-serif { font-family: 'Cormorant Garamond', serif; letter-spacing: -0.01em; }
+    .font-arabic { font-family: 'Noto Kufi Arabic', 'Inter', sans-serif; }
+
+    .gold-text {
+      background: linear-gradient(135deg, #f5dfa0 0%, #d4a017 50%, #8a6a0f 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .glass-panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+      backdrop-filter: blur(28px) saturate(140%);
+      -webkit-backdrop-filter: blur(28px) saturate(140%);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow:
+        inset 0 1px 0 0 rgba(255,255,255,0.06),
+        0 30px 80px -20px rgba(0,0,0,0.7),
+        0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+
+    .gold-gradient {
+      background: linear-gradient(135deg, #f5dfa0 0%, #d4a017 50%, #8a6a0f 100%);
+    }
+
+    .scrollbar-luxe::-webkit-scrollbar { width: 6px; }
+    .scrollbar-luxe::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-luxe::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(212,160,23,0.5), rgba(138,106,15,0.35));
+      border-radius: 999px;
+    }
+    .scrollbar-luxe { scrollbar-width: thin; scrollbar-color: rgba(212,160,23,0.4) transparent; }
+
+    @keyframes float-up {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes aurora {
+      0%,100% { transform: translate(0,0) rotate(0deg); }
+      33% { transform: translate(30px,-20px) rotate(2deg); }
+      66% { transform: translate(-20px,20px) rotate(-2deg); }
+    }
+    @keyframes typing-bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      80%, 100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    .animate-float-up { animation: float-up 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+    .app {
+      position: relative;
+      min-height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+    }
+
+    .aurora-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .aurora-1 {
+      position: absolute; top: -10vh; left: 50%;
+      width: 80vw; height: 60vh;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(245,223,160,0.18), transparent);
+      filter: blur(60px);
+      animation: aurora 18s ease-in-out infinite;
+    }
+    .aurora-2 {
+      position: absolute; bottom: -20vh; right: -10vw;
+      width: 60vw; height: 50vh;
+      border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(107,127,58,0.12), transparent);
+      filter: blur(60px);
+      animation: aurora 18s ease-in-out infinite reverse;
+    }
+
+    .chat-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 860px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+    @media (min-width: 768px) {
+      .chat-wrapper { padding: 24px; height: auto; min-height: 100dvh; }
+    }
+
+    .chat-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    @media (min-width: 768px) {
+      .chat-card { border-radius: 24px; height: calc(100dvh - 48px); }
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+    @media (min-width: 768px) { .header { padding: 20px 28px; } }
+
+    .avatar-wrap { position: relative; }
+    .avatar-glow {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(245,223,160,0.55), transparent);
+      filter: blur(8px);
+    }
+    .avatar {
+      position: relative;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Noto Kufi Arabic', sans-serif;
+      font-size: 20px; font-weight: 600;
+      color: #1a1508;
+      box-shadow: 0 8px 24px -6px rgba(212,160,23,0.55);
+    }
+    .avatar::after {
+      content: '';
+      position: absolute; inset: 0; border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.5), transparent 40%);
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .header-info { flex: 1; line-height: 1.2; }
+    .header-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.35rem; font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    @media (min-width: 768px) { .header-title { font-size: 1.5rem; } }
+
+    .header-status {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 2px;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--fg-muted);
+    }
+    .status-dot-wrap { position: relative; display: inline-flex; width: 8px; height: 8px; }
+    .status-dot-ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: rgba(52,211,153,0.6);
+      animation: pulse-ring 1.8s cubic-bezier(0.4,0,0.6,1) infinite;
+    }
+    .status-dot {
+      position: relative;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+    }
+
+    .badge {
+      display: none;
+      align-items: center; gap: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--fg-muted);
+      backdrop-filter: blur(12px);
+    }
+    @media (min-width: 768px) { .badge { display: inline-flex; } }
+
+    .messages { flex: 1; overflow-y: auto; padding: 24px 16px; overscroll-behavior: contain; }
+    @media (min-width: 768px) { .messages { padding: 32px; } }
+
+    .messages-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .bubble-bot-avatar {
+      margin-top: 2px;
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Noto Kufi Arabic', sans-serif;
+      font-size: 14px; font-weight: 600;
+      color: #1a1508;
+      box-shadow: 0 4px 14px -4px rgba(212,160,23,0.6);
+      background: linear-gradient(135deg, #f5dfa0 0%, #d4a017 50%, #8a6a0f 100%);
+    }
+
+    .msg-time {
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(176,168,144,0.6);
+      padding: 0 4px;
+    }
+
+    .suggestions {
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 12px 16px 8px;
+      flex-shrink: 0;
+    }
+    @media (min-width: 768px) { .suggestions { padding: 12px 32px 8px; } }
+
+    .suggestions-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(12px);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: rgba(248,244,234,0.85);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .chip:hover {
+      border-color: rgba(212,160,23,0.4);
+      color: var(--gold-soft);
+    }
+    .chip-shine {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(245,223,160,0.15), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.7s;
+    }
+    .chip:hover .chip-shine { transform: translateX(100%); }
+
+    .composer {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.25));
+      padding: 14px 16px;
+      flex-shrink: 0;
+    }
+    @media (min-width: 768px) { .composer { padding: 20px 32px; } }
+
+    .composer-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-wrap { position: relative; flex: 1; }
+    .input-glow {
+      position: absolute; inset: -2px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(245,223,160,0.12), rgba(138,106,15,0.04));
+      opacity: 0;
+      filter: blur(4px);
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .input-wrap:focus-within .input-glow { opacity: 1; }
+    .input-box {
+      display: flex; align-items: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
+      transition: border-color 0.3s;
+    }
+    .input-wrap:focus-within .input-box { border-color: rgba(212,160,23,0.5); }
+    .input-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 14px 20px;
+      font-size: 15px;
+      color: var(--fg);
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .input-box input::placeholder { color: rgba(176,168,144,0.7); }
+    .input-box input:disabled { opacity: 0.6; }
+
+    .send-btn {
+      position: relative;
+      width: 48px; height: 48px;
+      flex-shrink: 0;
+      border: none;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: #1a1508;
+      box-shadow: 0 10px 30px -8px rgba(212,160,23,0.55);
+      transition: all 0.3s;
+      background: linear-gradient(135deg, #f5dfa0 0%, #d4a017 50%, #8a6a0f 100%);
+    }
+    .send-btn:hover { box-shadow: 0 14px 40px -8px rgba(212,160,23,0.7); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+    .send-btn::after {
+      content: '';
+      position: absolute; inset: 0; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.4), transparent 50%);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .send-btn svg { width: 18px; height: 18px; transition: transform 0.3s; }
+    .send-btn:hover:not(:disabled) svg { transform: translate(2px, -2px); }
+
+    .footer-info {
+      max-width: 640px;
+      margin: 16px auto 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px 20px;
+      font-size: 11px;
+      color: rgba(176,168,144,0.8);
+    }
+    .footer-info a {
+      color: inherit;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    .footer-info a:hover { color: var(--gold-soft); }
+    .info-item { display: inline-flex; align-items: center; gap: 6px; }
+    .info-item svg, .footer-info a svg {
+      width: 12px; height: 12px;
+      color: rgba(212,160,23,0.7);
+    }
+  </style>
+</head>
+<body style="background: black; color: white;">
+
+<div class="app">
+  <div class="aurora-bg">
+    <div class="aurora-1"></div>
+    <div class="aurora-2"></div>
+  </div>
+
+  <div class="chat-wrapper">
+    <div class="chat-card glass-panel">
+      <header class="header">
+        <div class="avatar-wrap">
+          <div class="avatar-glow"></div>
+          <div class="avatar gold-gradient"></div>
+        </div>
+        <div class="header-info">
+          <h1 class="header-title">Baraka <span class="gold-text">Al-Sanabel</span></h1>
+          <div class="header-status">
+            <span class="status-dot-wrap">
+              <span class="status-dot-ring"></span>
+              <span class="status-dot"></span>
+            </span>
+            Online 
+          </div>
+        </div>
+        <div class="badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 22v-6"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6"/><path d="M22 12h-6"/><path d="M4.93 19.07l4.24-4.24"/><path d="M14.83 9.17l4.24-4.24"/></svg>
+          Product Assistant
+        </div>
+      </header>
+
+      <div class="messages scrollbar-luxe" id="messages">
+        <div class="messages-inner" id="messagesInner"></div>
+      </div>
+
+      <div class="suggestions" id="suggestions">
+        <div class="suggestions-inner" id="suggestionsInner"></div>
+      </div>
+
+      <form class="composer" id="composerForm">
+        <div class="composer-inner">
+          <div class="input-wrap">
+            <div class="input-glow"></div>
+            <div class="input-box">
+              <input type="text" id="messageInput" placeholder="Ask about our pasta…" autocomplete="off" aria-label="Message Baraka Assistant" />
+            </div>
+          </div>
+          <button type="submit" class="send-btn" id="sendBtn" aria-label="Send message">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+        <div class="footer-info">
+          <span class="info-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            Jeddah
+          </span>
+          <span class="info-item">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            basc-sa.com
+          </span>
+          <a href="mailto:info@basc-sa.com">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            info@basc-sa.com
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SESSION_ID = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  const SUGGESTIONS = [
+    "Show all pasta shapes",
+    "Whole wheat line",
+    "Where do you export?",
+    "Bulk order inquiry",
+  ];
+
+  const messagesInner = document.getElementById('messagesInner');
+  const suggestionsEl = document.getElementById('suggestions');
+  const suggestionsInner = document.getElementById('suggestionsInner');
+  const input = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const form = document.getElementById('composerForm');
+  const messagesScroller = document.getElementById('messages');
+
+  let sending = false;
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function renderMarkdown(text) {
+    let html = escapeHtml(text);
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noreferrer">$1</a>');
+    html = html.replace(/\n/g, '<br>');
+    return html;
+  }
+
+  function addMessage(role, text) {
+    const isUser = role === 'user';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'animate-float-up';
+    wrapper.style.display = 'flex';
+    wrapper.style.justifyContent = isUser ? 'flex-end' : 'flex-start';
+
+    if (isUser) {
+      wrapper.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:82%;">
+          <div style="position:relative;overflow:hidden;border-radius:20px 20px 4px 20px;padding:10px 16px;font-size:14.5px;font-weight:500;line-height:1.6;color:#1a1508;box-shadow:0 8px 24px -10px rgba(212,160,23,0.6);background:linear-gradient(135deg, #f5dfa0 0%, #d4a017 50%, #8a6a0f 100%);">
+            <span style="position:absolute;inset:0;background:linear-gradient(135deg, rgba(255,255,255,0.35), transparent 55%);pointer-events:none;"></span>
+            <span style="position:relative;white-space:pre-wrap;word-break:break-word;">${renderMarkdown(text)}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      wrapper.innerHTML = `
+        <div style="display:flex;gap:10px;">
+          <div class="bubble-bot-avatar">ب</div>
+          <div style="display:flex;flex-direction:column;gap:4px;max-width:82%;">
+            <div style="position:relative;overflow:hidden;border-radius:20px 20px 20px 4px;padding:12px 16px;font-size:14.5px;line-height:1.6;color:rgba(248,244,234,0.95);background:rgba(255,255,255,0.035);backdrop-filter:blur(20px) saturate(130%);-webkit-backdrop-filter:blur(20px) saturate(130%);border:1px solid rgba(255,255,255,0.07);">
+              <span style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,223,160,0.4),transparent);"></span>
+              <span style="white-space:pre-wrap;word-break:break-word;">${renderMarkdown(text)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    messagesInner.appendChild(wrapper);
+    scrollToBottom();
+
+    if (messagesInner.children.length > 1) {
+      suggestionsEl.style.display = 'none';
+    }
+  }
+
+  function showTyping() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'animate-float-up';
+    wrapper.id = 'typingIndicator';
+    wrapper.innerHTML = `
+      <div style="display:flex;gap:10px;">
+        <div class="bubble-bot-avatar">ب</div>
+        <div style="display:flex;align-items:center;gap:6px;padding:14px 16px;border-radius:20px 20px 20px 4px;background:rgba(255,255,255,0.035);backdrop-filter:blur(20px) saturate(130%);-webkit-backdrop-filter:blur(20px) saturate(130%);border:1px solid rgba(255,255,255,0.07);">
+          <span style="width:6px;height:6px;border-radius:50%;background:#d4a017;animation:typing-bounce 1.3s ease-in-out infinite;"></span>
+          <span style="width:6px;height:6px;border-radius:50%;background:#d4a017;animation:typing-bounce 1.3s ease-in-out 0.18s infinite;"></span>
+          <span style="width:6px;height:6px;border-radius:50%;background:#d4a017;animation:typing-bounce 1.3s ease-in-out 0.36s infinite;"></span>
+        </div>
+      </div>
+    `;
+    messagesInner.appendChild(wrapper);
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+
+  function scrollToBottom() {
+    requestAnimationFrame(() => {
+      messagesScroller.scrollTo({ top: messagesScroller.scrollHeight, behavior: 'smooth' });
+    });
+  }
+
+  function renderSuggestions() {
+    suggestionsInner.innerHTML = '';
+    SUGGESTIONS.forEach(s => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip';
+      btn.innerHTML = `<span style="position:relative;z-index:2;">${s}</span><span class="chip-shine"></span>`;
+      btn.onclick = () => send(s);
+      suggestionsInner.appendChild(btn);
+    });
+  }
+
+  async function send(text) {
+    const message = (text ?? input.value).trim();
+    if (!message || sending) return;
+
+    addMessage('user', message);
+    input.value = '';
+    sending = true;
+    sendBtn.disabled = true;
+    input.disabled = true;
+    showTyping();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, session_id: SESSION_ID }),
+      });
+      const data = await res.json();
+      hideTyping();
+      addMessage('bot', data.response ?? '…');
+    } catch (e) {
+      hideTyping();
+      addMessage('bot', "We couldn't reach the assistant. Please try again.");
+    } finally {
+      sending = false;
+      sendBtn.disabled = true;
+      input.disabled = false;
+      requestAnimationFrame(() => input.focus());
+    }
+  }
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); send(); });
+  input.addEventListener('input', () => {
+    sendBtn.disabled = !input.value.trim() || sending;
+  });
+  input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); send(); }
+  });
+
+  addMessage('bot', "Welcome to **Baraka Al-Sanabel** 🌾\nمرحباً بك في بركة السنابل\n\nI'm the Baraka product assistant. Ask me about our **pasta shapes**, **whole wheat line**, **Swiss manufacturing**, **certifications**, or start a **bulk order** inquiry.");
+  renderSuggestions();
+  input.focus();
+</script>
+
+</body>
+</html>

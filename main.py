@@ -1,0 +1,433 @@
+from dotenv import load_dotenv
+load_dotenv(override=True) # Forces it to read the .env file
+
+# HARDCODED FALLBACK (in case .env still fails)
+import os
+
+import os
+import re
+import sys
+import json
+import random
+import string
+import socket
+from datetime import datetime
+
+from pymongo import MongoClient
+from groq import Groq
+
+try:
+    import ftfy
+except Exception:
+    ftfy = None
+
+from products_seed import (
+    PRODUCTS, BRANDS, CERTIFICATIONS, EXPORT_MARKETS, MANUFACTURING
+)
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
+try:
+    socket.setdefaulttimeout(30)
+except Exception:
+    pass
+
+# ===== SETUP =====
+MONGO_URI = os.environ.get("MONGO_URI")
+if not MONGO_URI:
+    print("ERROR: set MONGO_URI env var")
+    sys.exit(1)
+
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    print("ERROR: set GROQ_API_KEY env var")
+    sys.exit(1)
+
+groq_client = Groq(api_key=GROQ_API_KEY)
+GROQ_MODEL = "openai/gpt-oss-120b"
+
+try:
+    client_mongo = MongoClient(
+        MONGO_URI,
+        tls=True,
+        tlsAllowInvalidCertificates=True,
+        tlsAllowInvalidHostnames=True,
+        connectTimeoutMS=30000,
+        socketTimeoutMS=30000,
+        serverSelectionTimeoutMS=30000,
+    )
+    client_mongo.admin.command("ping")
+    print("Connected to MongoDB!")
+except Exception as e:
+    print(f"ERROR: could not connect to MongoDB: {e}")
+    sys.exit(1)
+
+db = client_mongo["baraka_agent"]
+products_col = db["products"]
+inquiries = db["inquiries"]
+
+COMPANY_WEBSITE = "basc-sa.com"
+COMPANY_PHONE = "+966 12 000 0000"     
+COMPANY_EMAIL = "info@basc-sa.com"     
+COMPANY_LOCATION = "Jeddah, Saudi Arabia"
+
+
+# ===== SEED =====
+def seed_products():
+    try:
+        if products_col.count_documents({}) > 0:
+            return
+    except Exception:
+        pass
+
+    docs = []
+    for p in PRODUCTS:
+        docs.append({
+            **p,
+            "certifications": CERTIFICATIONS,
+            "brands": [b["name"] for b in BRANDS],
+            "wheat": MANUFACTURING["wheat"],
+        })
+    products_col.insert_many(docs)
+    print(f"Seeded {len(docs)} products.")
+
+
+def get_all_products():
+    return list(products_col.find())
+
+
+def generate_code():
+    return "BAR-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
+
+def get_all_inquiries():
+    return list(inquiries.find().sort("createdAt", -1).limit(20))
+
+
+# ===== KNOWLEDGE BASE =====
+def build_kb_text():
+    lines = ["COMPANY: Baraka Al-Sanabel (بركة السنابل)", ""]
+    lines.append(f"Website: {COMPANY_WEBSITE}")
+    lines.append(f"Location: {COMPANY_LOCATION}")
+    lines.append(f"Phone: {COMPANY_PHONE}")
+    lines.append(f"Email: {COMPANY_EMAIL}")
+    lines.append("")
+    lines.append("MANUFACTURING:")
+    for k, v in MANUFACTURING.items():
+        lines.append(f"- {k}: {v}")
+    lines.append("")
+    lines.append("CERTIFICATIONS: " + ", ".join(CERTIFICATIONS))
+    lines.append("")
+    lines.append("BRANDS:")
+    for b in BRANDS:
+        lines.append(f"- {b['name']} ({b['name_ar']}): {b['positioning']}")
+    lines.append("")
+    lines.append("EXPORT MARKETS:")
+    for m in EXPORT_MARKETS:
+        lines.append(f"- {m}")
+    lines.append("")
+    lines.append(f"PRODUCT CATALOG ({len(PRODUCTS)} total shapes):")
+    lines.append("")
+    for p in PRODUCTS:
+        ww = "WHOLE WHEAT line" if p["whole_wheat"] else "CLASSIC line"
+        lines.append(f"### {p['name']} ({p['name_ar']}) — {ww}")
+        lines.append(f"Shape: {p['shape']}")
+        lines.append(f"Wheat: {MANUFACTURING['wheat']}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+# ===== SYSTEM PROMPT =====
+SYSTEM_PROMPT_TEMPLATE = """You are Baraka Assistant — a warm, knowledgeable AI product concierge for Baraka Al-Sanabel (بركة السنابل), a premium pasta manufacturer in Jeddah, Saudi Arabia, exporting to 15+ countries.
+
+You help three types of users:
+1. DISTRIBUTORS and RETAILERS asking about bulk orders, MOQ, pricing, export.
+2. HoReCa (hotels, restaurants, catering) asking about shapes, cooking performance, pack sizes.
+3. CONSUMERS asking about ingredients, certifications, whole wheat options, recipes.
+
+Talk like a real person. Friendly, professional, never robotic. Reply in the same language the user writes in (Arabic or English). If they mix, mirror the dominant language.
+
+═══════════════════════════════════
+LENGTH RULES (STRICT)
+═══════════════════════════════════
+- Casual chat, greetings, small talk: 1-3 short sentences, under 60 words.
+- When the user asks WHAT PRODUCTS ARE AVAILABLE ("what do you make", "show me your pasta", "list products", "المنتجات المتاحة", "شنو عندكم"):
+  → Give the COMPLETE list, grouped by line (Classic / Whole Wheat). Every shape by name, both English and Arabic. Do not skip any. Do not summarize. Do not cut off. Long is fine.
+- When the user asks about ONE shape or to compare two: full detail for those.
+- When the user asks about a CATEGORY (e.g. "long pasta", "whole wheat", "short shapes"): list only that category, but completely.
+
+═══════════════════════════════════
+FORMAT for listing products
+═══════════════════════════════════
+
+**CLASSIC LINE**
+- Spaghetti (سباجيتي) — long, round
+- Penne Rigate (بيني ريجاتي) — short, ridged tube
+...
+
+**WHOLE WHEAT LINE**
+- Spaghetti (سباجيتي) — long, round
+...
+
+═══════════════════════════════════
+FORMAT for a single product detail
+═══════════════════════════════════
+
+**Spaghetti (سباجيتي)**
+- Line: Classic
+- Shape: long, round
+- Wheat: Swiss durum wheat
+- Certifications: ISO 22000:2018, SFDA
+- Best for: classic tomato sauces, aglio e olio, carbonara
+
+═══════════════════════════════════
+SPELL WORDS OUT
+═══════════════════════════════════
+- "Whole Wheat" not "WW"
+- "Saudi Food & Drug Authority (SFDA)" the first time it appears, then "SFDA"
+- "ISO 22000:2018" with the year
+- "HoReCa" the first time = "hotels, restaurants, and catering (HoReCa)"
+
+═══════════════════════════════════
+STRICT FACTS — NEVER INVENT
+═══════════════════════════════════
+- NEVER invent pasta shapes, brands, certifications, or export markets not listed below.
+- NEVER invent prices, MOQ, lead times, or delivery terms. These are commercial and must come from the sales team.
+- If asked about price, MOQ, or lead time, say:
+  "Pricing and MOQ are handled by our sales team — I can collect your details and they'll follow up within 24 hours. Want me to?"
+  (Arabic equivalent: "الأسعار والحد الأدنى للطلب يتولاها فريق المبيعات — أقدر أخذ بياناتك ويرجعون لك خلال ٢٤ ساعة. تحب؟")
+- NEVER claim a product is organic, gluten-free, halal-certified beyond what's listed, or that it cures anything.
+- If asked something you don't know (e.g. a specific factory address), say so honestly and offer to connect them to the sales team.
+
+═══════════════════════════════════
+BULK INQUIRY FLOW
+═══════════════════════════════════
+When a distributor/retailer/HoReCa buyer wants to order or asks about pricing/MOQ:
+Ask ONLY for what's missing:
+  1. Full name
+  2. Company name (optional — but ask)
+  3. Country
+  4. Phone (10 digits, strip +966)
+  5. Email (optional)
+  6. Products of interest (specific shapes or "full range")
+  7. Approximate quantity (e.g. "1 container", "500 cartons/month")
+  8. Notes (optional)
+When you have the required fields (name, country, phone, products, quantity), summarize back and ask them to type "confirm" (or "تأكيد" in Arabic).
+
+After they confirm, the system will save it and give them a code like "BAR-XXXXX". Do not generate the code yourself.
+
+═══════════════════════════════════
+KNOWLEDGE BASE
+═══════════════════════════════════
+{knowledge}
+
+═══════════════════════════════════
+EXISTING INQUIRIES (internal — NEVER show these codes to the user)
+═══════════════════════════════════
+{inquiries}
+
+═══════════════════════════════════
+CONTACT
+═══════════════════════════════════
+Website: {website} | Phone: {phone} | Email: {email}"""
+
+
+def _call_groq(messages, json_mode=False, max_tokens=2000, temperature=0.5):
+    try:
+        kwargs = dict(model=GROQ_MODEL, messages=messages,
+                      max_tokens=max_tokens, temperature=temperature)
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+        resp = groq_client.chat.completions.create(**kwargs)
+        content = resp.choices[0].message.content
+        return json.loads(content) if json_mode else content
+    except Exception as e:
+        print(f"[GROQ ERROR] {e}")
+        return None
+
+
+# ===== EXTRACTION =====
+EXTRACT_SYSTEM = """You analyze a conversation between Baraka Al-Sanabel's AI assistant and a buyer. Extract structured data ONLY.
+
+Return ONLY a JSON object:
+{
+  "action": "none" | "confirm_inquiry",
+  "inquiry": {
+    "name": "full name or null",
+    "company": "company or null",
+    "country": "country or null",
+    "phone": "10-digit number or null",
+    "email": "email or null",
+    "products": "products of interest or null",
+    "quantity": "quantity or null",
+    "notes": "notes or null"
+  }
+}
+
+RULES:
+- action = "confirm_inquiry" ONLY if the LAST user message clearly agrees to submit the bulk inquiry (confirm, yes, submit, send it, تأكيد, نعم, ارسل).
+- Never fabricate data. Use null for anything not stated.
+- Phone: strip +966, spaces, dashes -> 10 digits.
+- Products: prefer exact English shape names from the catalog (Spaghetti, Penne Rigate, etc.). If the user said "full range" or "all shapes", set products to "Full range".
+- Quantity: preserve the user's phrasing (e.g. "500 cartons/month", "1 container", "2 tons").
+"""
+
+
+def analyze_intent(state, latest_user_msg):
+    convo_text = "\n".join(
+        f"{m['role'].capitalize()}: {m['content']}"
+        for m in state.conversation_history[-8:]
+    )
+    convo_text += f"\n\nLAST user message: {latest_user_msg}"
+
+    messages = [
+        {"role": "system", "content": EXTRACT_SYSTEM},
+        {"role": "user", "content": convo_text},
+    ]
+    for attempt in range(2):
+        result = _call_groq(messages, json_mode=True, max_tokens=600, temperature=0.0)
+        if result:
+            return result
+        print(f"[INTENT] JSON failed on attempt {attempt + 1}, retrying...")
+    return None
+
+
+def save_inquiry(extracted):
+    inq = extracted.get("inquiry") or {}
+    required = ["name", "country", "phone", "products", "quantity"]
+    missing = [k for k in required if not inq.get(k)]
+    if missing:
+        return False, {"missing": missing}
+
+    code = generate_code()
+    doc = {
+        "customerName": inq["name"],
+        "company": inq.get("company"),
+        "country": inq["country"],
+        "phoneNumber": inq["phone"],
+        "email": inq.get("email"),
+        "products": inq["products"],
+        "quantity": inq["quantity"],
+        "notes": inq.get("notes"),
+        "orderCode": code,
+        "status": "new",
+        "createdAt": datetime.now(),
+    }
+    try:
+        inquiries.insert_one(doc)
+        print(f"[MONGO] Inquiry inserted: {code}")
+    except Exception as e:
+        print(f"[MONGO ERROR] {e}")
+        return False, {"db_error": str(e)}
+    return True, {"code": code, **doc}
+
+
+# ===== STATE =====
+class AgentState:
+    def __init__(self):
+        self.language = "english"
+        self.first_message_sent = False
+        self.conversation_history = []
+        self.inquiry_saved = False
+
+    def reset(self):
+        self.language = "english"
+        self.first_message_sent = False
+        self.conversation_history = []
+        self.inquiry_saved = False
+
+
+def detect_language(text):
+    arabic = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
+    return "arabic" if arabic.search(text) else "english"
+
+
+# ===== MAIN =====
+def process_message(user_message, state):
+    msg = (user_message or "").strip()
+    if not msg:
+        return "..."
+
+    if not state.first_message_sent:
+        state.first_message_sent = True
+        state.language = detect_language(msg)
+        greeting = (
+            "Welcome to Baraka Al-Sanabel 🌾 — مرحباً بك في بركة السنابل\n\n"
+            "I'm the Baraka product assistant. Ask me about our pasta shapes, "
+            "whole wheat line, Swiss manufacturing, certifications, export markets, "
+            "or start a bulk order inquiry."
+        )
+        state.conversation_history = [{"role": "assistant", "content": greeting}]
+        return greeting
+
+    state.language = detect_language(msg)
+    state.conversation_history.append({"role": "user", "content": msg})
+    state.conversation_history = state.conversation_history[-14:]
+
+    system = SYSTEM_PROMPT_TEMPLATE.format(
+        knowledge=build_kb_text(),
+        inquiries="\n".join(
+            f"- {d.get('orderCode')} | {d.get('customerName')} | {d.get('country')} | {d.get('products')}"
+            for d in get_all_inquiries()
+        ) or "No existing inquiries.",
+        website=COMPANY_WEBSITE,
+        phone=COMPANY_PHONE,
+        email=COMPANY_EMAIL,
+    )
+    messages = [{"role": "system", "content": system}] + state.conversation_history
+
+    reply = _call_groq(messages, max_tokens=4000, temperature=0.7)
+    if not reply:
+        fallback = ("Sorry — I'm having trouble reaching the assistant. Try again."
+                    if state.language == "english"
+                    else "عذراً، أواجه مشكلة في الاتصال. حاول مرة أخرى.")
+        return fallback
+
+    state.conversation_history.append({"role": "assistant", "content": reply})
+
+    if len(state.conversation_history) >= 4 and not state.inquiry_saved:
+        intent = analyze_intent(state, latest_user_msg=msg)
+        if intent and intent.get("action") == "confirm_inquiry":
+            ok, payload = save_inquiry(intent)
+            if ok:
+                state.inquiry_saved = True
+                reply += (
+                    f"\n\n✅ Inquiry submitted — رمز الطلب: {payload['code']}\n"
+                    f"Products: {payload['products']}\n"
+                    f"Quantity: {payload['quantity']}\n"
+                    f"Country: {payload['country']}\n\n"
+                    f"Our sales team will contact you within 24 hours.\n"
+                    f"Website: {COMPANY_WEBSITE} | Email: {COMPANY_EMAIL}"
+                )
+                state.conversation_history[-1]["content"] = reply
+            elif isinstance(payload, dict) and payload.get("missing"):
+                missing_str = ", ".join(payload["missing"])
+                reply += f"\n\n⚠️ I still need: {missing_str}"
+                state.conversation_history[-1]["content"] = reply
+
+    if ftfy:
+        reply = ftfy.fix_text(reply)
+    return reply
+
+
+def start_chat():
+    seed_products()
+    state = AgentState()
+    print("\n" + "=" * 60)
+    print("BARAKA AL-SANABEL — AI PRODUCT CONCIERGE")
+    print("=" * 60)
+    while True:
+        try:
+            user_input = input("\nYou: ")
+        except (EOFError, KeyboardInterrupt):
+            print("\nGoodbye! 👋")
+            break
+        print(f"Bot: {process_message(user_input, state)}")
+
+
+if __name__ == "__main__":
+    start_chat()
