@@ -1,4 +1,5 @@
-from dotenv import load_dotenv
+﻿from dotenv import load_dotenv
+load_dotenv(override=True)
 load_dotenv(override=True) # Forces it to read the .env file
 
 # HARDCODED FALLBACK (in case .env still fails)
@@ -352,19 +353,8 @@ def process_message(user_message, state):
     if not msg:
         return "..."
 
-    if not state.first_message_sent:
-        state.first_message_sent = True
-        state.language = detect_language(msg)
-        greeting = (
-            "Welcome to Baraka Al-Sanabel 🌾 — مرحباً بك في بركة السنابل\n\n"
-            "I'm the Baraka product assistant. Ask me about our pasta shapes, "
-            "whole wheat line, Swiss manufacturing, certifications, export markets, "
-            "or start a bulk order inquiry."
-        )
-        state.conversation_history = [{"role": "assistant", "content": greeting}]
-        return greeting
-
     state.language = detect_language(msg)
+    
     state.conversation_history.append({"role": "user", "content": msg})
     state.conversation_history = state.conversation_history[-14:]
 
@@ -379,7 +369,7 @@ def process_message(user_message, state):
         email=COMPANY_EMAIL,
     )
     messages = [{"role": "system", "content": system}] + state.conversation_history
-
+    
     reply = _call_groq(messages, max_tokens=4000, temperature=0.7)
     if not reply:
         fallback = ("Sorry — I'm having trouble reaching the assistant. Try again."
@@ -389,7 +379,7 @@ def process_message(user_message, state):
 
     state.conversation_history.append({"role": "assistant", "content": reply})
 
-    if len(state.conversation_history) >= 4 and not state.inquiry_saved:
+    if len(state.conversation_history) >= 2 and not state.inquiry_saved:
         intent = analyze_intent(state, latest_user_msg=msg)
         if intent and intent.get("action") == "confirm_inquiry":
             ok, payload = save_inquiry(intent)
@@ -412,8 +402,7 @@ def process_message(user_message, state):
     if ftfy:
         reply = ftfy.fix_text(reply)
     return reply
-
-
+    
 def start_chat():
     seed_products()
     state = AgentState()
