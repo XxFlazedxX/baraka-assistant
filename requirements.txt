@@ -1,0 +1,7 @@
+flask
+gunicorn
+pymongo[srv]
+groq
+python-dotenv
+resend
+ftfy
