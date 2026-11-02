@@ -391,10 +391,8 @@
   });
 
 
-  // Show the welcome message immediately when the page loads
-  addMessage('bot', "Welcome to **Baraka Al-Sanabel** 🌾\nمرحباً بك في بركة السنابل\n\nI'm the Baraka product assistant. Ask me about our pasta shapes, whole wheat line, Swiss manufacturing, certifications, export markets, or start a bulk order inquiry.");
-
-  renderSuggestions();
+  const WELCOME = "Hello! 👋 I'm the Baraka Al-Sanabel assistant. I can help with our pasta range, certifications, exports, and bulk orders. How can I help?\n\nمرحباً! كيف أقدر أساعدك؟";
+  addMessage('bot', WELCOME);
   input.focus();
 </script>
 
